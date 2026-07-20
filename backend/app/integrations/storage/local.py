@@ -2,8 +2,6 @@ from pathlib import Path
 
 
 class LocalStorage:
-    """Test/local disk adapter — used via dependency override in tests."""
-
     def __init__(self, root: str | Path | None = None) -> None:
         self._root = Path(root or "./storage").resolve()
         self._root.mkdir(parents=True, exist_ok=True)
@@ -15,7 +13,7 @@ class LocalStorage:
         *,
         metadata: dict[str, str] | None = None,
     ) -> str:
-        _ = metadata  # local disk ignores object metadata
+        _ = metadata
         path = self._root / key
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(data)

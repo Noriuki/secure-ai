@@ -1,1 +1,0 @@
-"""Bedrock / Knowledge Base integrations."""

@@ -16,7 +16,6 @@ async function parseError(response: Response): Promise<never> {
     const payload = (await response.json()) as { detail?: string }
     if (payload.detail) detail = payload.detail
   } catch {
-    // ignore parse errors
   }
   throw new ApiError(detail, response.status)
 }

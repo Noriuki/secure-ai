@@ -1,1 +1,0 @@
-"""Presidio Analyzer (text, pt)."""

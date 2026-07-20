@@ -29,10 +29,8 @@ class Document(Base):
     size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
     storage_key: Mapped[str] = mapped_column(String(512), nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="uploaded")
-    # uploaded | processing | ready | failed
     kb_sync_job_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     kb_sync_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
-    # started | skipped | failed
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,

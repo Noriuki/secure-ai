@@ -44,7 +44,6 @@ class Message(Base):
         index=True,
     )
     role: Mapped[str] = mapped_column(String(32), nullable=False)
-    # user | assistant | system
     content: Mapped[str] = mapped_column(Text, nullable=False)
     sources_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
     created_at: Mapped[datetime] = mapped_column(

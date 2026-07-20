@@ -1,5 +1,3 @@
-"""Presidio Analyzer PII detection + local tokenization."""
-
 from __future__ import annotations
 
 from uuid import UUID

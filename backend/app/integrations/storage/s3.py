@@ -1,5 +1,3 @@
-"""Amazon S3 storage adapter."""
-
 from __future__ import annotations
 
 import boto3
@@ -28,7 +26,6 @@ class S3Storage:
     ) -> str:
         extra: dict = {}
         if metadata:
-            # S3 user metadata values must be strings.
             extra["Metadata"] = {k: str(v) for k, v in metadata.items()}
         self._client.put_object(Bucket=self._bucket, Key=key, Body=data, **extra)
         return key

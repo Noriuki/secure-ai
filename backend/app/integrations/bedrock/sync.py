@@ -1,5 +1,3 @@
-"""Trigger Knowledge Base ingestion after documents land in S3 and wait until done."""
-
 from __future__ import annotations
 
 import logging
@@ -20,11 +18,10 @@ _DEFAULT_TIMEOUT_SECONDS = 180.0
 @dataclass(slots=True, frozen=True)
 class KnowledgeBaseSyncResult:
     job_id: str | None
-    status: str  # complete | failed | skipped | timeout
+    status: str
 
 
 def sync_knowledge_base(*, timeout_seconds: float = _DEFAULT_TIMEOUT_SECONDS) -> KnowledgeBaseSyncResult:
-    """Start an ingestion job and block until it finishes (or timeout)."""
     settings = get_settings()
     if not settings.bedrock_knowledge_base_id or not settings.bedrock_data_source_id:
         logger.warning(

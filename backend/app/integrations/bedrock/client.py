@@ -1,5 +1,3 @@
-"""Amazon Bedrock Managed Knowledge Base RAG (AgenticRetrieveStream)."""
-
 from __future__ import annotations
 
 import time
@@ -12,20 +10,11 @@ from app.integrations.bedrock.protocols import RagReply, RagSource
 
 
 class BedrockRag:
-    """RAG against a Managed Knowledge Base via AgenticRetrieveStream.
-
-    Classic RetrieveAndGenerate is not supported for managed KBs.
-    Managed store filters do not support STRING_CONTAINS on S3 paths, and custom
-    S3 object metadata is not exposed as filter attributes — so workspace
-    isolation is enforced by post-filtering retrieved chunks on
-    `workspaces/{workspace_id}/` in `_source_uri` / `_document_id`.
-    """
 
     def __init__(self) -> None:
         settings = get_settings()
         self._kb_id = settings.bedrock_knowledge_base_id
         self._region = settings.aws_region
-        self._model_id = settings.bedrock_model_id
         if not self._kb_id:
             raise RuntimeError(
                 "BEDROCK_KNOWLEDGE_BASE_ID is required. "
@@ -99,7 +88,6 @@ class BedrockRag:
         return RagReply(
             answer=answer,
             sources=sources,
-            model=self._model_id or "managed",
             latency_ms=latency_ms,
         )
 

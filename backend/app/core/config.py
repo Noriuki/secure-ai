@@ -17,7 +17,6 @@ class Settings(BaseSettings):
     s3_bucket: str = ""
     bedrock_knowledge_base_id: str = ""
     bedrock_data_source_id: str = ""
-    bedrock_model_id: str = "amazon.nova-lite-v1:0"
     presidio_analyzer_url: str = "http://localhost:5003"
     presidio_timeout_seconds: float = 15.0
 

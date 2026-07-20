@@ -33,7 +33,6 @@ class _TestRag:
             sources=[
                 RagSource(title="guia.txt", excerpt="subir a API", uri=None, score=0.9),
             ],
-            model="test",
             latency_ms=12,
         )
 

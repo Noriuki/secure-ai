@@ -1,5 +1,3 @@
-"""Extract plain text from PDF bytes for PII + KB indexing."""
-
 from __future__ import annotations
 
 from io import BytesIO
@@ -15,7 +13,7 @@ def extract_text_from_pdf(data: bytes) -> str:
 
     try:
         reader = PdfReader(BytesIO(data))
-    except Exception as exc:  # noqa: BLE001 — pypdf raises varied errors
+    except Exception as exc:  # noqa: BLE001
         raise ValidationAppError("Não foi possível ler o PDF") from exc
 
     parts: list[str] = []
