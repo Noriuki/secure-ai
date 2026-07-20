@@ -1,0 +1,384 @@
+supported_languages:
+  - pt
+
+global_regex_flags: 26
+
+recognizers:
+  - name: SpacyRecognizer
+    type: predefined
+
+  - name: EmailRecognizer
+    type: predefined
+    enabled: false
+
+  - name: PhoneRecognizer
+    type: predefined
+    enabled: false
+
+  - name: IpRecognizer
+    type: predefined
+
+  - name: UrlRecognizer
+    type: predefined
+
+  - name: DateRecognizer
+    type: predefined
+
+  - name: CryptoRecognizer
+    type: predefined
+
+  - name: IbanRecognizer
+    type: predefined
+    enabled: false
+
+  - name: MacAddressRecognizer
+    type: predefined
+
+  # --- Recognizers BR (espelho do backend ad_hoc) ---
+
+  - name: BR RG Recognizer
+    type: custom
+    supported_language: pt
+    supported_entity: BR_RG
+    context:
+      - rg
+      - identidade
+      - documento
+    patterns:
+      - name: rg
+        regex: '\b\d{1,2}[.\-]\d{3}[.\-]\d{3}-?[0-9Xx]\b'
+        score: 0.85
+
+  - name: BR RG Plain Recognizer
+    type: custom
+    supported_language: pt
+    supported_entity: BR_RG
+    context:
+      - rg
+      - identidade
+      - documento
+      - portador
+      - portadora
+    patterns:
+      - name: rg plain
+        regex: '(?:RG|Registro\s+Geral)\s*(?:n[ºo.]?\s*)?\d{5,12}\b'
+        score: 0.85
+
+  - name: BR CPF Recognizer
+    type: custom
+    supported_language: pt
+    supported_entity: BR_CPF
+    context:
+      - cpf
+      - cadastro
+      - inscrição
+      - inscricao
+      - contribuinte
+      - receita
+    patterns:
+      - name: cpf
+        regex: '\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b'
+        score: 0.75
+
+  - name: BR CNPJ Recognizer
+    type: custom
+    supported_language: pt
+    supported_entity: BR_CNPJ
+    context:
+      - cnpj
+      - empresa
+      - pessoa jurídica
+      - pessoa juridica
+      - inscrição
+      - inscricao
+    patterns:
+      - name: cnpj
+        regex: '\b\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}\b'
+        score: 0.75
+
+  - name: BR CNJ Recognizer
+    type: custom
+    supported_language: pt
+    supported_entity: CNJ
+    context:
+      - processo
+      - cnj
+      - autos
+      - procedimento
+      - número
+      - numero
+    patterns:
+      - name: cnj
+        regex: '\b\d{7}[-.]\d{2}\.\d{4}\.\d\.\d{2}\.\d{4}\b'
+        score: 0.8
+      - name: cnj plain
+        regex: '\b\d{20}\b'
+        score: 0.65
+
+  - name: BR PIS Recognizer
+    type: custom
+    supported_language: pt
+    supported_entity: PIS
+    context:
+      - pis
+      - pasep
+      - nit
+      - inss
+      - previdência
+      - previdencia
+    patterns:
+      - name: pis
+        regex: '\b\d{3}\.?\d{5}\.?\d{2}-?\d{1}\b'
+        score: 0.85
+
+  - name: BR Phone Recognizer
+    type: custom
+    supported_language: pt
+    supported_entity: PHONE_NUMBER
+    context:
+      - telefone
+      - celular
+      - whatsapp
+      - fone
+      - contato
+    patterns:
+      - name: br phone
+        regex: '(?:\+55\s*)?(?:\(\d{2}\)|\d{2})[\s.-]*(?:9[\s.-]*)?\d{4,5}\s*-\s*\d{4}'
+        score: 0.88
+
+  - name: BR Email Recognizer
+    type: custom
+    supported_language: pt
+    supported_entity: EMAIL_ADDRESS
+    context:
+      - email
+      - e-mail
+      - correio
+      - contato
+    patterns:
+      - name: email
+        regex: '\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b'
+        score: 0.88
+
+  - name: BR OAB Recognizer
+    type: custom
+    supported_language: pt
+    supported_entity: OAB
+    context:
+      - oab
+      - advogado
+      - advogada
+      - patrono
+      - procurador
+    patterns:
+      - name: oab
+        regex: '\bOAB\/?[A-Z]{2}\s*[\d.A-Za-z-]{2,12}\b'
+        score: 0.9
+
+  - name: BR CEP Recognizer
+    type: custom
+    supported_language: pt
+    supported_entity: CEP
+    context:
+      - cep
+      - endereço
+      - endereco
+      - domiciliado
+      - residente
+      - logradouro
+    patterns:
+      - name: cep
+        regex: '\b(?:CEP\s*:?\s*)?\d{2}\.?\d{3}\s*-\s*\d{3}\b'
+        score: 0.85
+
+  - name: BR Street Address Recognizer
+    type: custom
+    supported_language: pt
+    supported_entity: ADDRESS
+    context:
+      - rua
+      - avenida
+      - endereço
+      - endereco
+      - domiciliado
+      - residente
+      - logradouro
+    patterns:
+      - name: street
+        regex: '\b(?:Rua|Av\.?|Avenida|Travessa|Alameda|Praça|Rodovia|Estrada|Quadra|Setor|Ed\.?)\s+[^,\n]{3,90}(?:,\s*(?:n[ºo.]?\s*)?\d+|n[uú]mero\s+\d+)'
+        score: 0.82
+
+  - name: BR Social Handle Recognizer
+    type: custom
+    supported_language: pt
+    supported_entity: SOCIAL_HANDLE
+    context:
+      - instagram
+      - facebook
+      - usuário
+      - usuario
+      - perfil
+      - rede social
+    patterns:
+      - name: handle
+        regex: "(?:^|[\\s({'\"\\u201C\\u2018])@[A-Za-z0-9._]{3,30}\\b"
+        score: 0.8
+      - name: handle url
+        regex: '(?:https?:\/\/)?(?:www\.)?(?:instagram|facebook)\.com\/[A-Za-z0-9._]{3,30}\b'
+        score: 0.85
+      - name: handle quoted
+        regex: "(?:usu[aá]rio|perfil|instagram|facebook|identificad[oa])[\\s\\S]{0,50}[\\u201C\\u201D\\u2018\\u2019\"'](@?[A-Za-z][A-Za-z0-9._]{2,29})[\\u201C\\u201D\\u2018\\u2019\"']"
+        score: 0.82
+
+  - name: BR PIX UUID Recognizer
+    type: custom
+    supported_language: pt
+    supported_entity: BR_PIX_KEY
+    context:
+      - pix
+      - chave pix
+    patterns:
+      - name: pix uuid
+        regex: '\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b'
+        score: 0.9
+
+  - name: BR Plate Recognizer
+    type: custom
+    supported_language: pt
+    supported_entity: BR_PLATE
+    context:
+      - placa
+      - veículo
+      - veiculo
+      - automóvel
+      - automovel
+    patterns:
+      - name: plate old
+        regex: '\b[A-Z]{3}-?\d{4}\b'
+        score: 0.7
+      - name: plate mercosul
+        regex: '\b[A-Z]{3}\d[A-Z]\d{2}\b'
+        score: 0.75
+
+  - name: BR Date of Birth Recognizer
+    type: custom
+    supported_language: pt
+    supported_entity: DATE_OF_BIRTH
+    context:
+      - nascimento
+      - nascido
+      - nascida
+      - data de nascimento
+      - dn
+      - nasceu
+      - dt. nasc
+    patterns:
+      - name: dob
+        regex: '\b(?:0[1-9]|[12]\d|3[01])\/(?:0[1-9]|1[0-2])\/(?:19|20)\d{2}\b'
+        score: 0.7
+
+  - name: BR IBAN Recognizer
+    type: custom
+    supported_language: pt
+    supported_entity: IBAN
+    context:
+      - iban
+      - conta internacional
+      - transferência internacional
+      - swift
+    patterns:
+      - name: iban
+        regex: '\b(?:IBAN\s*:?\s*)?[A-Z]{2}\d{2}[A-Z0-9]{11,30}\b'
+        score: 0.9
+
+  - name: BR SWIFT BIC Recognizer
+    type: custom
+    supported_language: pt
+    supported_entity: SWIFT_BIC
+    context:
+      - swift
+      - bic
+      - código swift
+      - codigo swift
+    patterns:
+      - name: swift
+        regex: '\b(?:SWIFT(?:\s*(?:\/|code|c[oó]digo))?\s*|BIC\s*:?\s*)[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}(?:[A-Z0-9]{3})?\b'
+        score: 0.92
+
+  - name: BR Bank Code Recognizer
+    type: custom
+    supported_language: pt
+    supported_entity: BANK_CODE
+    context:
+      - banco
+      - código do banco
+      - codigo do banco
+      - compe
+    patterns:
+      - name: bank code
+        regex: '\b(?:c[oó]digo\s*(?:do\s+)?banco|cod\.?\s*banco|banco\s*n[ºo.°]\s*)\s*:?\s*\d{3}\b'
+        score: 0.85
+
+  - name: BR Bank Agency Recognizer
+    type: custom
+    supported_language: pt
+    supported_entity: BANK_AGENCY
+    context:
+      - agência
+      - agencia
+      - ag.
+      - banco
+      - dados bancários
+      - dados bancarios
+    patterns:
+      - name: agency
+        regex: '\b(?:ag[eê]ncia|ag\.)\s*(?:n[ºo.°]?\s*)?\d{1,6}(?:\s*[-–]\s*\d{1,2})?\b'
+        score: 0.86
+
+  - name: BR Bank Account Recognizer
+    type: custom
+    supported_language: pt
+    supported_entity: BANK_ACCOUNT
+    context:
+      - conta
+      - c/c
+      - conta corrente
+      - conta poupança
+      - conta poupanca
+      - banco
+      - depósito
+      - deposito
+    patterns:
+      - name: account
+        regex: '\b(?:conta(?:\s+(?:corrente|poupan[cç]a|sal[aá]rio|pagamento))?|c\/c|c\.c\.|c\.p\.|conta\s+poupan[cç]a)\s*(?:n[ºo.°]?\s*)?\d{1,12}(?:\s*[-–/]\s*\d{1,2})?\b'
+        score: 0.88
+
+  - name: BR Bank Name Recognizer
+    type: custom
+    supported_language: pt
+    supported_entity: BANK_NAME
+    context:
+      - banco
+      - instituição financeira
+      - instituicao financeira
+      - favorecido
+      - deposito
+      - depósito
+    patterns:
+      - name: bank name
+        regex: "\\b(?:Banco|Caixa\\s+Econ[oô]mica|Cooperativa\\s+de\\s+Cr[eé]dito)\\s+(?:do\\s+|da\\s+|de\\s+)?[A-ZÀ-ÚÁÉÍÓÚÂÊÔÃÕÇ][A-Za-zÀ-úÁÉÍÓÚÂÊÔÃÕÇ0-9\\s.'-]{2,48}(?:\\s+(?:S\\.?\\/?A\\.?|S\\.A\\.|S\\/A))?\\b"
+        score: 0.72
+
+  - name: BR Address Endereco Line Recognizer
+    type: custom
+    supported_language: pt
+    supported_entity: ADDRESS
+    context:
+      - endereço
+      - endereco
+      - domiciliado
+      - residente
+    patterns:
+      - name: endereco line
+        regex: '\bEndere[cç]o\s*:\s*[^\n]{10,220}'
+        score: 0.8

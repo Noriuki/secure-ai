@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: secure_ai
+      POSTGRES_PASSWORD: secure_ai
+      POSTGRES_DB: secure_ai
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U secure_ai -d secure_ai"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  presidio-analyzer:
+    build:
+      context: ./presidio
+    image: secure-ai/presidio-analyzer:pt
+    ports:
+      - "5003:3000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 90s
+      retries: 3
+
+volumes:
+  postgres_data:
