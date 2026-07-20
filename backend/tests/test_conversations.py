@@ -34,10 +34,3 @@ def test_conversation_and_chat(client: TestClient) -> None:
     )
     assert messages.status_code == 200
     assert len(messages.json()) == 2
-
-    dashboard = client.get("/api/v1/dashboard")
-    assert dashboard.status_code == 200
-    stats = dashboard.json()
-    assert stats["llm_calls"] >= 1
-    assert stats["avg_latency_ms"] is not None
-    assert any(event["event_type"] == "chat" for event in stats["recent_events"])

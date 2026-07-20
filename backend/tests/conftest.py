@@ -10,8 +10,8 @@ from sqlalchemy.pool import StaticPool
 
 from app.core.config import get_settings
 from app.core.db import Base, get_db
-from app.core.security import models as _pii_models  # noqa: F401
-from app.core.storage import LocalStorage, get_storage
+from app.integrations.storage.local import LocalStorage
+from app.integrations.storage.provider import get_storage
 from app.integrations.bedrock.protocols import RagPort, RagReply, RagSource
 from app.integrations.bedrock.provider import get_rag
 from app.integrations.pii.protocols import AnonymizeResult, PiiProcessor
@@ -19,7 +19,6 @@ from app.integrations.pii.provider import get_pii_processor
 from app.main import create_app
 
 # Import models so metadata is registered.
-from app.modules.audit import models as _audit_models  # noqa: F401
 from app.modules.conversations import models as _conversations_models  # noqa: F401
 from app.modules.documents import models as _documents_models  # noqa: F401
 from app.modules.workspaces import models as _workspaces_models  # noqa: F401

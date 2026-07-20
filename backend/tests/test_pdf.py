@@ -1,7 +1,7 @@
 import pytest
 
 from app.core.exceptions import ValidationAppError
-from app.integrations.documents.pdf import extract_text_from_pdf
+from app.shared.parsing.pdf import extract_text_from_pdf
 
 
 def test_extract_text_from_pdf_rejects_empty() -> None:

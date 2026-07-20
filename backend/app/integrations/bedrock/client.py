@@ -89,7 +89,11 @@ class BedrockRag:
             answer = "".join(answer_parts)
 
         if not sources:
-            answer = "Não encontrei informação nos documentos deste workspace."
+            answer = (
+                "Ainda não encontrei trechos indexados deste workspace. "
+                "Se o documento acabou de ser enviado, aguarde a indexação da "
+                "Knowledge Base (geralmente 1–3 min) e pergunte de novo."
+            )
 
         latency_ms = int((time.perf_counter() - started) * 1000)
         return RagReply(
@@ -105,6 +109,9 @@ class BedrockRag:
         haystacks = (
             str(metadata.get("_source_uri") or ""),
             str(metadata.get("_document_id") or ""),
+            str(metadata.get("x-amz-bedrock-kb-source-uri") or ""),
+            str(metadata.get("sourceUri") or ""),
+            str(metadata.get("uri") or ""),
         )
         return any(path_marker in value for value in haystacks)
 

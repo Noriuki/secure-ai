@@ -3,14 +3,13 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
+
 from app.core.config import get_settings
 from app.core.db import Base
 
-# Models
-from app.modules.audit.models import AuditEvent  # noqa: F401
+# Import models so metadata is registered.
 from app.modules.conversations.models import Conversation, Message  # noqa: F401
-from app.modules.documents.models import Document  # noqa: F401
-from app.core.security.models import PiiVaultEntry  # noqa: F401
+from app.modules.documents.models import Document, PiiVaultEntry  # noqa: F401
 from app.modules.workspaces.models import Workspace  # noqa: F401
 
 config = context.config

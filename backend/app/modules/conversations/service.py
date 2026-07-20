@@ -7,10 +7,10 @@ from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.core.exceptions import NotFoundError
-from app.core.security.service import PiiService, get_pii_service
 from app.integrations.bedrock.protocols import RagPort
 from app.integrations.bedrock.provider import get_rag
-from app.modules.audit.service import AuditService, get_audit_service
+from app.integrations.pii.protocols import PiiProcessor
+from app.integrations.pii.provider import get_pii_processor
 from app.modules.conversations.models import Conversation, Message
 from app.modules.conversations.repository import ConversationRepository
 from app.modules.conversations.schemas import (
@@ -38,15 +38,13 @@ class ConversationService:
         self,
         repository: ConversationRepository,
         workspace_repository: WorkspaceRepository,
-        pii_service: PiiService,
+        pii_processor: PiiProcessor,
         rag: RagPort,
-        audit_service: AuditService,
     ) -> None:
         self._repository = repository
         self._workspace_repository = workspace_repository
-        self._pii_service = pii_service
+        self._pii_processor = pii_processor
         self._rag = rag
-        self._audit = audit_service
 
     def _ensure_workspace(self, workspace_id: UUID) -> None:
         if self._workspace_repository.get(workspace_id) is None:
@@ -84,7 +82,7 @@ class ConversationService:
     ) -> ChatResponse:
         conversation = self.get_conversation(workspace_id, conversation_id)
 
-        safe = self._pii_service.anonymize_and_vault(data.content.strip())
+        safe = self._pii_processor.anonymize(data.content.strip())
         user_message = self._repository.add_message(
             conversation_id=conversation.id,
             role="user",
@@ -109,16 +107,6 @@ class ConversationService:
         )
         self._repository.touch(conversation)
 
-        self._audit.record_chat(
-            workspace_id=workspace_id,
-            conversation_id=conversation.id,
-            message_id=assistant_message.id,
-            model=reply.model,
-            latency_ms=reply.latency_ms,
-            pii_match_count=len(safe.matches),
-            source_count=len(sources),
-        )
-
         return ChatResponse(
             user_message=message_to_response(user_message),
             assistant_message=message_to_response(assistant_message),
@@ -127,14 +115,12 @@ class ConversationService:
 
 def get_conversation_service(
     db: Annotated[Session, Depends(get_db)],
-    pii_service: Annotated[PiiService, Depends(get_pii_service)],
+    pii_processor: Annotated[PiiProcessor, Depends(get_pii_processor)],
     rag: Annotated[RagPort, Depends(get_rag)],
-    audit_service: Annotated[AuditService, Depends(get_audit_service)],
 ) -> ConversationService:
     return ConversationService(
         ConversationRepository(db),
         WorkspaceRepository(db),
-        pii_service,
+        pii_processor,
         rag,
-        audit_service,
     )

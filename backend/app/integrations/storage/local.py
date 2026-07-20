@@ -21,10 +21,13 @@ class LocalStorage:
         path.write_bytes(data)
         return key
 
+    def read(self, key: str) -> bytes:
+        path = self._root / key
+        if not path.exists():
+            raise FileNotFoundError(key)
+        return path.read_bytes()
+
     def delete(self, key: str) -> None:
         path = self._root / key
         if path.exists():
             path.unlink()
-
-    def exists(self, key: str) -> bool:
-        return (self._root / key).exists()

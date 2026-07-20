@@ -33,15 +33,16 @@ class S3Storage:
         self._client.put_object(Bucket=self._bucket, Key=key, Body=data, **extra)
         return key
 
-    def delete(self, key: str) -> None:
-        self._client.delete_object(Bucket=self._bucket, Key=key)
-
-    def exists(self, key: str) -> bool:
+    def read(self, key: str) -> bytes:
         try:
-            self._client.head_object(Bucket=self._bucket, Key=key)
-            return True
+            response = self._client.get_object(Bucket=self._bucket, Key=key)
         except ClientError as exc:
             code = exc.response.get("Error", {}).get("Code", "")
             if code in {"404", "NoSuchKey", "NotFound"}:
-                return False
+                raise FileNotFoundError(key) from exc
             raise
+        body = response["Body"].read()
+        return body if isinstance(body, bytes) else bytes(body)
+
+    def delete(self, key: str) -> None:
+        self._client.delete_object(Bucket=self._bucket, Key=key)

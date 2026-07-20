@@ -1,5 +1,7 @@
 from fastapi.testclient import TestClient
 
+from app.integrations.bedrock.sync import KnowledgeBaseSyncResult
+
 
 def _create_workspace(client: TestClient) -> str:
     response = client.post("/api/v1/workspaces", json={"name": "Docs WS"})
@@ -9,8 +11,8 @@ def _create_workspace(client: TestClient) -> str:
 
 def test_upload_list_and_delete_document(client: TestClient, monkeypatch) -> None:
     monkeypatch.setattr(
-        "app.modules.documents.service.start_knowledge_base_sync",
-        lambda: "job-test-1",
+        "app.modules.documents.service.sync_knowledge_base",
+        lambda: KnowledgeBaseSyncResult(job_id="job-test-1", status="complete"),
     )
     workspace_id = _create_workspace(client)
 
@@ -22,8 +24,15 @@ def test_upload_list_and_delete_document(client: TestClient, monkeypatch) -> Non
     document = upload.json()
     assert document["filename"] == "nota.txt"
     assert document["status"] == "ready"
-    assert document["kb_sync_status"] == "started"
+    assert document["kb_sync_status"] == "complete"
     assert document["kb_sync_job_id"] == "job-test-1"
+
+    content = client.get(
+        f"/api/v1/workspaces/{workspace_id}/documents/{document['id']}/content",
+    )
+    assert content.status_code == 200
+    assert content.content == b"hello secure ai"
+    assert "text/plain" in content.headers["content-type"]
 
     listed = client.get(f"/api/v1/workspaces/{workspace_id}/documents")
     assert listed.status_code == 200
@@ -38,8 +47,8 @@ def test_upload_list_and_delete_document(client: TestClient, monkeypatch) -> Non
 
 def test_upload_pdf_is_parsed(client: TestClient, monkeypatch) -> None:
     monkeypatch.setattr(
-        "app.modules.documents.service.start_knowledge_base_sync",
-        lambda: None,
+        "app.modules.documents.service.sync_knowledge_base",
+        lambda: KnowledgeBaseSyncResult(job_id=None, status="skipped"),
     )
     monkeypatch.setattr(
         "app.modules.documents.service.extract_text_from_pdf",

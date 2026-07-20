@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from pathlib import PurePosixPath
 from typing import Annotated
@@ -8,14 +9,16 @@ from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.core.exceptions import NotFoundError, ValidationAppError
-from app.core.security.service import PiiService, get_pii_service
-from app.core.storage import StoragePort, get_storage
-from app.integrations.bedrock.sync import start_knowledge_base_sync
-from app.integrations.documents.pdf import extract_text_from_pdf
-from app.modules.audit.service import AuditService, get_audit_service
+from app.integrations.bedrock.sync import sync_knowledge_base
+from app.integrations.pii.protocols import PiiProcessor
+from app.integrations.pii.provider import get_pii_processor
+from app.integrations.storage.protocols import StoragePort
+from app.integrations.storage.provider import get_storage
 from app.modules.documents.models import Document
+from app.modules.documents.pii import anonymize_text, save_vault_matches
 from app.modules.documents.repository import DocumentRepository
 from app.modules.workspaces.repository import WorkspaceRepository
+from app.shared.parsing.pdf import extract_text_from_pdf
 
 logger = logging.getLogger(__name__)
 
@@ -25,17 +28,17 @@ _TEXT_SUFFIXES = (".txt", ".md", ".csv")
 class DocumentService:
     def __init__(
         self,
+        db: Session,
         repository: DocumentRepository,
         workspace_repository: WorkspaceRepository,
         storage: StoragePort,
-        pii_service: PiiService,
-        audit_service: AuditService,
+        pii_processor: PiiProcessor,
     ) -> None:
+        self._db = db
         self._repository = repository
         self._workspace_repository = workspace_repository
         self._storage = storage
-        self._pii_service = pii_service
-        self._audit = audit_service
+        self._pii_processor = pii_processor
 
     def _ensure_workspace(self, workspace_id: UUID) -> None:
         if self._workspace_repository.get(workspace_id) is None:
@@ -77,20 +80,10 @@ class DocumentService:
             )
 
         storage_key = f"workspaces/{workspace_id}/safe/{document_id}/{safe_name}"
-
-        document = self._repository.create(
-            document_id=document_id,
-            workspace_id=workspace_id,
-            filename=filename,
-            content_type=stored_content_type,
-            size_bytes=0,
-            storage_key=storage_key,
-            status="processing",
-        )
-
-        pii_result = self._pii_service.anonymize_and_vault(
+        pii_result = anonymize_text(
+            self._pii_processor,
             text_for_pii,
-            document_id=document.id,
+            document_id=document_id,
         )
         payload = pii_result.text.encode("utf-8")
 
@@ -99,43 +92,39 @@ class DocumentService:
             payload,
             metadata={
                 "workspace_id": str(workspace_id),
-                "document_id": str(document.id),
+                "document_id": str(document_id),
                 "filename": filename,
                 "original_filename": filename,
             },
         )
 
-        kb_sync_status = "skipped"
-        kb_sync_job_id: str | None = None
         try:
-            kb_sync_job_id = start_knowledge_base_sync()
-            kb_sync_status = "started" if kb_sync_job_id else "skipped"
+            sync_result = await asyncio.to_thread(sync_knowledge_base)
         except Exception:
-            logger.exception("Knowledge Base sync failed after upload %s", document.id)
-            kb_sync_status = "failed"
+            logger.exception("Knowledge Base sync failed for upload %s", document_id)
+            self._storage.delete(storage_key)
+            raise ValidationAppError(
+                "Falha ao indexar o documento na Knowledge Base. Tente novamente.",
+            ) from None
 
-        document = self._repository.update_status(
-            document.id,
-            "ready",
-            kb_sync_job_id=kb_sync_job_id,
-            kb_sync_status=kb_sync_status,
+        if sync_result.status not in {"complete", "skipped"}:
+            self._storage.delete(storage_key)
+            raise ValidationAppError(
+                "A indexação na Knowledge Base não concluiu a tempo. Tente novamente.",
+            )
+
+        document = self._repository.create(
+            document_id=document_id,
+            workspace_id=workspace_id,
+            filename=filename,
+            content_type=stored_content_type,
             size_bytes=len(payload),
             storage_key=storage_key,
-            content_type=stored_content_type,
+            status="ready",
+            kb_sync_job_id=sync_result.job_id,
+            kb_sync_status=sync_result.status,
         )
-
-        self._audit.record_upload(
-            workspace_id=workspace_id,
-            document_id=document.id,
-            pii_match_count=len(pii_result.matches),
-            detail=f"filename={filename}; parsed_as={'pdf' if is_pdf else 'text'}",
-        )
-        self._audit.record_kb_sync(
-            workspace_id=workspace_id,
-            document_id=document.id,
-            job_id=kb_sync_job_id,
-            status=kb_sync_status,
-        )
+        save_vault_matches(self._db, document.id, pii_result.matches)
         return document
 
     def delete_document(self, workspace_id: UUID, document_id: UUID) -> None:
@@ -143,17 +132,28 @@ class DocumentService:
         self._storage.delete(document.storage_key)
         self._repository.delete(document)
 
+    def read_document_content(
+        self,
+        workspace_id: UUID,
+        document_id: UUID,
+    ) -> tuple[Document, bytes]:
+        document = self.get_document(workspace_id, document_id)
+        try:
+            payload = self._storage.read(document.storage_key)
+        except FileNotFoundError as exc:
+            raise NotFoundError(f"Content for document {document_id} not found") from exc
+        return document, payload
+
 
 def get_document_service(
     db: Annotated[Session, Depends(get_db)],
     storage: Annotated[StoragePort, Depends(get_storage)],
-    pii_service: Annotated[PiiService, Depends(get_pii_service)],
-    audit_service: Annotated[AuditService, Depends(get_audit_service)],
+    pii_processor: Annotated[PiiProcessor, Depends(get_pii_processor)],
 ) -> DocumentService:
     return DocumentService(
+        db,
         DocumentRepository(db),
         WorkspaceRepository(db),
         storage,
-        pii_service,
-        audit_service,
+        pii_processor,
     )
